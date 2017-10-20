@@ -2,7 +2,7 @@
 !!Distances in Angstrom and energies in Hartrees
 module PES_details
   double precision :: gpRMax = 9.0  
-  double precision :: gpRMin = 2.0  
+  double precision :: gpRMin = 1.5  
   double precision :: lCO = 1.1632
   double precision :: AngToBohr =  1.8897259885789
   interface PES_GP 
@@ -18,18 +18,24 @@ end module PES_details
 module GP_variables
   double precision, allocatable :: alpha (:), lScale(:), xTraining(:,:), xTrainingPerm(:,:)
   double precision expVar,NuggVar, gpEmax
-  integer :: nDim=3
-  integer :: nTraining=221
+  integer :: nDim=9
+  integer :: nTraining=145
 end module GP_variables
 
 
- ! Test program
+! Test program
+use PES_details
 implicit none
-
+ 
 integer k,i, choice
 
+double precision rab(9),e, PES
+
+rab(1:9)=(/1.0, 1.0, 1.0, 1.0, 1.0, 1.0,1.0,  1.0,  1.0/)
+
 call load_GP_Data
-call fixedAngleSlice
+e=PES( rab)
+write(6,*)e
 
 end
 !
@@ -37,7 +43,7 @@ end
 subroutine fixedAngleSlice()
   use PES_details
   implicit none
-  double precision rab(3)
+  double precision rab(9)
   integer i, itot
   double precision  r, beta1, e, e_GP, asymp, PES
     
@@ -109,7 +115,7 @@ subroutine load_GP_Data
   
   double precision, allocatable::  xStar(:)
   integer i,j
-  double precision :: dum, expVar1, expVar2
+  double precision :: dum, expVar1, expVar2,expVar3
   character (len=90) :: filename
 
   allocate (alpha(nTraining), lScale(nDim), xTraining(nDim,nTraining),xTrainingPerm(nDim,nTraining), xStar(nDim))
@@ -118,11 +124,11 @@ subroutine load_GP_Data
   write (filename, '( "TrainingData/HyperParams_Symm", I3.3, ".dat" )' )  nTraining
   open (unit = 7, file = filename)
   !Only need to read some as others are tied.
-  read (7,*) lScale(2), lScale(1), expVar1, expVar2,NuggVar, gpEmax
+  read (7,*) lScale(3),lScale(2), lScale(1), expVar3, expVar2, expVar1,NuggVar, gpEmax
   !Copy over the tied values
-  lScale(3) = lScale(2)
-  expVar = expVar1 * expVar2
-  !print *,"HyperParams",lScale(1), lScale(2), lScale(3), expVar1, expVar2,NuggVar, gpEmax
+  !lScale(3) = lScale(2)
+  expVar = expVar1 * expVar2 * expVar3
+  !print *,"HyperParams",lScale(3), lScale(2), lScale(1), expVar3, expVar2,expVar1,NuggVar, gpEmax
   close(7)
   
   !====Load alpha coefficients====
@@ -140,8 +146,10 @@ subroutine load_GP_Data
   open (unit = 7, file = filename)
     
   do i=1,nTraining
-     read (7,*) xTraining(1,i), xTraining(2,i), xTraining(3,i)
-     !print *,xTraining(1,i), xTraining(2,i), xTraining(3,i)
+     read (7,*) xTraining(1,i), xTraining(2,i), xTraining(3,i), xTraining(4,i), xTraining(5,i),&
+          xTraining(6,i), xTraining(7,i), xTraining(8,i), xTraining(9,i)
+     print *,xTraining(1,i), xTraining(2,i), xTraining(3,i), xTraining(4,i), xTraining(5,i), &
+          xTraining(6,i), xTraining(7,i), xTraining(8,i), xTraining(9,i)
   end do
   !close(7)
   
@@ -184,7 +192,7 @@ function PES( rab )
   use PES_details
   use GP_variables
   implicit none
-  double precision rab(3), xStar(3), asymp
+  double precision rab(9), xStar(9), asymp
   double precision  PES
   double precision repFactor
 
