@@ -16,10 +16,11 @@ end module PES_details
 
 
 module GP_variables
-  double precision, allocatable :: alpha (:), lScale(:), xTraining(:,:), xTrainingPerm(:,:)
+  double precision, allocatable :: alpha (:), lScale(:), xTraining(:,:), xTrainingPerm(:,:,:)
   double precision expVar,NuggVar, gpEmax
   integer :: nDim=9
-  integer :: nTraining=145
+  integer :: nTraining=28
+  integer :: nPerms=8
 end module GP_variables
 
 
@@ -29,12 +30,30 @@ implicit none
  
 integer k,i, choice
 
-double precision rab(9),e, PES
+double precision rab(9),e, PES, xStar(9)
 
-rab(1:9)=(/1.0, 1.0, 1.0, 1.0, 1.0, 1.0,1.0,  1.0,  1.0/)
+xStar(1:9)=(/0.20971571,  0.22605512,  0.22877215,  0.20158676,  0.2298365 , &
+     0.2503203 ,  0.18510657,  0.2182286 ,  0.25385964/)
+xStar(1:9)=(/ 0.3018619 ,  0.33131717,  0.31699997,  0.30609471,  0.34708315, &
+     0.34030303,  0.27652502,  0.3131383 ,  0.31583372 /)
+
+xStar(1:9)=(/ 0.16918005,  0.20963065,  0.27441895,  0.15582496,  0.18869334, &
+        0.23773219,  0.14123042,  0.16638506,  0.20074532 /)
+
+xStar(1:9)=(/ 0.37918623,  0.43618246,  0.39957494,  0.32684715,  0.42808256, &
+     0.48455317,  0.26286132,  0.34577986,  0.44897025 /)
+
+xStar(1:9)=(/0.3791862300000000129962530, 0.4361824599999999940713735, &
+     0.3995749399999999895705116, 0.3268471499999999752006374, 0.4280825600000000008549250,&
+     0.4845531699999999775130277, 0.2628613200000000094114228, 0.3457798599999999944465401, &
+     0.4489702500000000151558766/)
+
+!xStar(1:9)=(/ 0.24927635,  0.29087296,  0.3123213 ,  0.277394  ,  0.30196993, &
+!        0.29306223,  0.28166435,  0.27929086,  0.25204695 /)
 
 call load_GP_Data
-e=PES( rab)
+e=PES_GP( xStar)
+!e=PES( rab)
 write(6,*)e
 
 end
@@ -114,21 +133,47 @@ subroutine load_GP_Data
   implicit none
   
   double precision, allocatable::  xStar(:)
-  integer i,j
+  integer i,j,k
   double precision :: dum, expVar1, expVar2,expVar3
   character (len=90) :: filename
+  integer, allocatable:: perm(:,:)
 
-  allocate (alpha(nTraining), lScale(nDim), xTraining(nDim,nTraining),xTrainingPerm(nDim,nTraining), xStar(nDim))
+  allocate (alpha(nTraining), lScale(nDim), xTraining(nDim,nTraining),xTrainingPerm(nDim,nPerms,nTraining), xStar(nDim), &
+       perm(nDim,nPerms))
 
   !====Load hyperparameters====
   write (filename, '( "TrainingData/HyperParams_Symm", I3.3, ".dat" )' )  nTraining
-  open (unit = 7, file = filename)
+  !write (filename, '( "TrainingData/myTest.dat" )' )  
+  !open (unit = 7, file = filename)
+  !! Older symmetric way
   !Only need to read some as others are tied.
-  read (7,*) lScale(3),lScale(2), lScale(1), expVar3, expVar2, expVar1,NuggVar, gpEmax
+  !!read (7,*) lScale(1),lScale(2), lScale(5), expVar3, expVar2, expVar1,NuggVar, gpEmax
+  
+  open (unit = 7, file = filename)
+  do i=1,nDim
+     read (7,*) dum
+     j=int(dum)
+     print *,i,j
+     read (7,*) lScale(j)
+  end do
+  
+  read (7,*) expVar
+  read (7,*) NuggVar
+  read (7,*) gpEMax
+  
   !Copy over the tied values
-  !lScale(3) = lScale(2)
-  expVar = expVar1 * expVar2 * expVar3
-  !print *,"HyperParams",lScale(3), lScale(2), lScale(1), expVar3, expVar2,expVar1,NuggVar, gpEmax
+  lScale(3) = lScale(1) ! 2=0
+  lScale(9) = lScale(1) ! 8=0
+  lScale(7) = lScale(1) ! 6=0
+  
+  lScale(4) = lScale(2) ! 3=1
+  lScale(6) = lScale(2) ! 5=1
+  lScale(8) = lScale(2) ! 7=1
+  !expVar = expVar1 * expVar2 * expVar3
+  print *,"HyperParams, lScale=",lScale(1), lScale(2),lScale(3),lScale(4), lScale(5), &
+       lScale(6),lScale(7),lScale(8),lScale(9)
+  
+  print *,"HyperParams",expVar,NuggVar, gpEmax
   close(7)
   
   !====Load alpha coefficients====
@@ -136,7 +181,7 @@ subroutine load_GP_Data
   open (unit = 7, file = filename)
   do i=1,nTraining
      read (7,*) alpha(i)
-     !print *,"alpha ",i, alpha(i)
+     !!print *,"alpha ",i, alpha(i)
   end do
   close(7)
 
@@ -148,16 +193,27 @@ subroutine load_GP_Data
   do i=1,nTraining
      read (7,*) xTraining(1,i), xTraining(2,i), xTraining(3,i), xTraining(4,i), xTraining(5,i),&
           xTraining(6,i), xTraining(7,i), xTraining(8,i), xTraining(9,i)
-     print *,xTraining(1,i), xTraining(2,i), xTraining(3,i), xTraining(4,i), xTraining(5,i), &
-          xTraining(6,i), xTraining(7,i), xTraining(8,i), xTraining(9,i)
+     !print *,xTraining(1,i), xTraining(2,i), xTraining(3,i), xTraining(4,i), xTraining(5,i), &
+     !     xTraining(6,i), xTraining(7,i), xTraining(8,i), xTraining(9,i)
   end do
-  !close(7)
+  close(7)
+
+  write (filename, '( "2CO2.sym" )' )
+  open (unit = 7, file = filename)
+  read(7,*) perm
+
+  !do i=1,nPerms
+   !  print *, perm(1,i), perm(2,i), perm(3,i), perm(4,i), perm(5,i), perm(6,i), perm(7,i),perm(8,i), perm(9,i)
+  !end do
   
   !! Permute the training vectors
-  xTrainingPerm = xTraining
-  do i=1,nTraining
-     xTrainingPerm(2,i)=xTraining(3,i)
-     xTrainingPerm(3,i)=xTraining(2,i)
+  
+  do i=1,nDim
+     do j=1,nPerms
+        do k=1,nTraining
+           xTrainingPerm(i,j,k)=xTraining(perm(i,j),k)
+        end do
+     end do
   end do
 
 end subroutine load_GP_Data
@@ -167,22 +223,37 @@ function PES_GP(xStar)
   implicit none
   double precision, dimension(:) :: xStar
   double precision:: PES_GP
-  integer beta,i
-  double precision kSqExp, kSqExpPerm, kKern
+  integer i,j,k
+  double precision kSqExpAllPerms, kSqExpJthPerm, kKernTotal
 
-  kKern=0
 
+  !! Non-symmetric way
+  !kKernTotal=0
+  !do i=1,nTraining
+  !   kSqExpAllPerms=1.0;
+  !   do k=1,nDim
+  !      kSqExpAllPerms=kSqExpAllPerms * &
+  !           ( exp( - (xStar(k)-xTraining(k,i))**2 /2.0/lScale(k)**2) )
+  !   end do
+  !   kKernTotal = kKernTotal + alpha(i)*kSqExpAllPerms
+  !end do
+
+  !Symmetric way
+  kKernTotal=0
   do i=1,nTraining
-     kSqExp=1;
-     kSqExpPerm=1;
-     do beta=1,nDim
-        kSqExp  =  kSqExp * ( exp( - (xStar(beta)-xTraining(beta,i))**2 /2.0/lScale(beta)**2) )
-        kSqExpPerm  =  kSqExpPerm * ( exp( - (xStar(beta)-xTrainingPerm(beta,i))**2 /2.0/lScale(beta)**2) ) 
-     end do
-     kKern = kKern + alpha(i) * (kSqExp + kSqExpPerm)
-  end do
+     kSqExpAllPerms=0
+     do j=1,nPerms
+        kSqExpJthPerm=1        
+        do k=1,nDim
+           kSqExpJthPerm  =  kSqExpJthPerm * &
+                ( exp( - (xStar(k)-xTrainingPerm(k,j,i))**2 /2.0/lScale(k)**2) )
+        end do !Dimensions (k)
+        kSqExpAllPerms = kSqExpAllPerms + kSqExpJthPerm
+     end do !Permuations (
+     kKernTotal = kKernTotal + alpha(i) * kSqExpAllPerms
+  end do !Training points (i)
   
-  PES_GP=kKern * expVar
+  PES_GP=kKernTotal * expVar
 end function PES_GP
 
 
