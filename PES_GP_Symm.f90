@@ -52,9 +52,11 @@ xStar(1:9)=(/0.20971571,  0.22605512,  0.22877215,  0.20158676,  0.2298365 , &
 !        0.29306223,  0.28166435,  0.27929086,  0.25204695 /)
 
 call load_GP_Data
-e=PES_GP( xStar)
+call fixedAngleSlice
+
+!e=PES_GP( xStar)
 !e=PES( rab)
-write(6,*)e
+!write(6,*)e
 
 end
 !
@@ -64,11 +66,33 @@ subroutine fixedAngleSlice()
   implicit none
   double precision rab(9)
   integer i, itot
-  double precision  r, beta1, e, e_GP, asymp, PES
+  double precision  r, beta1,beta2, alpha2, e, e_GP, asymp, PES, PI
+
+  PI=4.D0*DATAN(1.D0)
     
   itot=500
-  beta1 =  0   /180.0*3.14159265359
 
+  !T shape
+  !beta1 = acos(0.0)
+  !beta2 = acos(1.0)
+  !alpha2 = 0.0
+
+  !I shape
+  !beta1 = acos(1.0)
+  !beta2 = acos(1.0)
+  !alpha2 = 0.0
+  
+  !Para shape
+  !beta1 = acos(0.0)
+  !beta2 = acos(0.0)
+  !alpha2 = 0.0
+  
+  !X shape
+  beta1 = acos(0.0)
+  beta2 = acos(0.0)
+  alpha2 = 0.5 * PI
+
+  
   open (unit=15, file="PES_Out.dat ", status='replace')
   
   do i=0, itot
@@ -76,7 +100,7 @@ subroutine fixedAngleSlice()
      ! specify centre-to-centre separation
      r = (  0.5 + 15.0*i/(1.0*itot) ) 
 
-     call computeDistances(r,beta1,rab)
+     call computeDistances(r,alpha2,beta1,beta2,rab)
      
      
      e=PES( rab)
@@ -91,17 +115,76 @@ end subroutine fixedAngleSlice
   
   
   
-subroutine computeDistances(r,beta1, rab)
+subroutine computeDistances(r,alpha2,beta1, beta2, rDist)
   use PES_details
   implicit none
-  double precision  rab(3), r, beta1
-  integer ia, ib, ir,k
+  double precision  rDist(9), r, beta1, beta2, alpha2
+  double precision O1(3),O2(3),O3(3),O4(3),C1(3),C2(3)
+  double precision sqLength
 
-  rab(1)=r
-  rab(2)= SQRT( (lCO*SIN(beta1))**2 +(lCO*COS(beta1)-r)**2  )
-  rab(3)= SQRT( (lCO*SIN(beta1))**2 +(lCO*COS(beta1)+r)**2  )
+  O1(:)=0
+  O2(:)=0
+  O3(:)=0
+  O4(:)=0
+
+  C1(:)=0
+  C2(:)=0
+  
+  !CO2 1
+  !C is already at the origin
+  O1(1)=lCO * sin( beta1)
+  O1(3)=lCO *cos(beta1)
+  
+  O2(1)=-lCO * sin( beta1)
+  O2(3)=-lCO * cos(beta1)
+  
+ 
+  !CO2 2
+  C2(3)= r
+  
+  O3(1) =  lCO * sin(beta2) * cos(alpha2)
+  O3(2) =  lCO * sin(beta2) * sin(alpha2)
+  O3(3) =  r  +  lCO * cos(beta2)
+  
+  O4(1) =  -lCO * sin(beta2) * cos(alpha2)
+  O4(2) =  -lCO * sin(beta2) * sin(alpha2)
+  O4(3) =  r  -  lCO * cos(beta2)
+  
+  
+  rDist(1)= SQRT( sqLength(O1,O3) )
+  rDist(2)= SQRT( sqLength(O1,C2) )
+  rDist(3)= SQRT( sqLength(O1,O4) )
+
+
+  rDist(4)= SQRT( sqLength(C1,O3) )
+  rDist(5)= SQRT( sqLength(C1,C2) )
+  rDist(6)= SQRT( sqLength(C1,O4) )
+
+  rDist(7)= SQRT( sqLength(O2,O3) )
+  rDist(8)= SQRT( sqLength(O2,C2) )
+  rDist(9)= SQRT( sqLength(O2,O4) )
+
+  
    
-end subroutine
+end subroutine computeDistances
+
+
+double precision function sqLength( u,v)
+  !returns the square of the distance between two vectors
+  implicit none
+  double precision sum
+  double precision u(3), v(3)
+  integer i
+
+  sum=0.0
+  do i = 1,3 
+    sum = sum  +  (  v(i)-u(i)  )**2
+  enddo
+  
+  sqLength= sum
+end function sqLength
+
+
 
 double precision function asymp(rab)
   use PES_details
@@ -262,7 +345,7 @@ function PES( rab )
   
   if( rab(1) > gpRMax  .AND.  rab(2) > gpRMax .AND.  rab(3) > gpRMax &
        ) then !!Use asymptotic function
-     PES = asymp(rab)
+     PES = 0
      
   else if (rab(1) < gpRMin/repFactor  .OR.  rab(2) < gpRMin/repFactor  .OR.  rab(3) < gpRMin/repFactor &
        ) then !! Use repulsive approximation function
