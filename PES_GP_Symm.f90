@@ -78,9 +78,9 @@ subroutine fixedAngleSlice()
   !alpha2 = 0.0
 
   !I shape
-  !beta1 = acos(1.0)
-  !beta2 = acos(1.0)
-  !alpha2 = 0.0
+  beta1 = acos(1.0)
+  beta2 = acos(1.0)
+  alpha2 = 0.0
   
   !Para shape
   !beta1 = acos(0.0)
@@ -88,9 +88,9 @@ subroutine fixedAngleSlice()
   !alpha2 = 0.0
   
   !X shape
-  beta1 = acos(0.0)
-  beta2 = acos(0.0)
-  alpha2 = 0.5 * PI
+  !beta1 = acos(0.0)
+  !beta2 = acos(0.0)
+  !alpha2 = 0.5 * PI
 
   
   open (unit=15, file="PES_Out.dat ", status='replace')
