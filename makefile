@@ -1,5 +1,5 @@
 # simple make file
-SOURCES=PES_GP_Symm.f90 
+SOURCES=PES_GP_Symm.f90 2CO2_PES_GP_Symm.f90 
 PRODUCT=2CO2_PES.out
 
 
