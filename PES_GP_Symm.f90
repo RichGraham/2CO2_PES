@@ -78,9 +78,9 @@ subroutine fixedAngleSlice()
   !alpha2 = 0.0
 
   !I shape
-  beta1 = acos(1.0)
-  beta2 = acos(1.0)
-  alpha2 = 0.0
+  !beta1 = acos(1.0)
+  !beta2 = acos(1.0)
+  !alpha2 = 0.0
   
   !Para shape
   !beta1 = acos(0.0)
@@ -88,9 +88,9 @@ subroutine fixedAngleSlice()
   !alpha2 = 0.0
   
   !X shape
-  !beta1 = acos(0.0)
-  !beta2 = acos(0.0)
-  !alpha2 = 0.5 * PI
+  beta1 = acos(0.0)
+  beta2 = acos(0.0)
+  alpha2 = 0.5 * PI
 
   
   open (unit=15, file="PES_Out.dat ", status='replace')
@@ -98,7 +98,7 @@ subroutine fixedAngleSlice()
   do i=0, itot
 
      ! specify centre-to-centre separation
-     r = (  0.5 + 15.0*i/(1.0*itot) ) 
+     r = (  1.5 + 8.5*i/(1.0*itot) ) 
 
      call computeDistances(r,alpha2,beta1,beta2,rab)
      
