@@ -58,9 +58,15 @@ subroutine load_GP_2CO2_Data
   double precision :: dum, expVar1, expVar2,expVar3
   character (len=90) :: filename
   integer, allocatable:: perm(:,:)
+  CHARACTER(len=255) :: homedir,codedir
 
-  allocate (alpha(nTraining), lScale(nDim), xTraining(nDim,nTraining),xTrainingPerm(nDim,nPerms,nTraining), xStar(nDim), &
-       perm(nDim,nPerms))
+  allocate (alpha(nTraining), lScale(nDim), xTraining(nDim,nTraining),xTrainingPerm(nDim,nPerms,nTraining),  &
+       xStar(nDim), perm(nDim,nPerms))
+
+
+  CALL getenv("HOME", homedir)
+  codedir=TRIM(homedir) // '/source/2CO2_PES'
+  call chdir(codedir)
 
   !====Load hyperparameters====
   write (filename, '( "TrainingData/HyperParams_Symm", I3.3, ".dat" )' )  nTraining
@@ -74,7 +80,7 @@ subroutine load_GP_2CO2_Data
   do i=1,nDim
      read (7,*) dum
      j=int(dum)
-     print *,i,j
+     !print *,i,j
      read (7,*) lScale(j)
   end do
   
@@ -82,10 +88,10 @@ subroutine load_GP_2CO2_Data
   read (7,*) NuggVar
   read (7,*) gpEMax
  
-  print *,"HyperParams, lScale=",lScale(1), lScale(2),lScale(3),lScale(4), lScale(5), &
-       lScale(6),lScale(7),lScale(8),lScale(9)
+  !!print *,"HyperParams, lScale=",lScale(1), lScale(2),lScale(3),lScale(4), lScale(5), &
+    !!   lScale(6),lScale(7),lScale(8),lScale(9)
   
-  print *,"HyperParams",expVar,NuggVar, gpEmax
+  !!print *,"HyperParams",expVar,NuggVar, gpEmax
   close(7)
   
   !====Load alpha coefficients====
