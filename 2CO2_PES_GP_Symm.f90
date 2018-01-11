@@ -66,10 +66,11 @@ subroutine load_GP_2CO2_Data
 
   CALL getenv("HOME", homedir)
   codedir=TRIM(homedir) // '/source/2CO2_PES'
-  call chdir(codedir)
+  !!call chdir(codedir)
 
   !====Load hyperparameters====
-  write (filename, '( "TrainingData/HyperParams_Symm", I3.3, ".dat" )' )  nTraining
+  write (filename, '( "/TrainingData/HyperParams_Symm", I3.3, ".dat" )' )  nTraining
+  filename = trim(codedir) // filename
   !write (filename, '( "TrainingData/myTest.dat" )' )  
   !open (unit = 7, file = filename)
   !! Older symmetric way
@@ -95,7 +96,8 @@ subroutine load_GP_2CO2_Data
   close(7)
   
   !====Load alpha coefficients====
-  write (filename, '( "TrainingData/alpha_Symm", I3.3, ".dat" )' )  nTraining
+  write (filename, '( "/TrainingData/alpha_Symm", I3.3, ".dat" )' )  nTraining
+  filename = trim(codedir) // filename
   open (unit = 7, file = filename)
   do i=1,nTraining
      read (7,*) alpha(i)
@@ -105,7 +107,8 @@ subroutine load_GP_2CO2_Data
 
 
   !====Load training data x values ====
-  write (filename, '( "TrainingData/xTraining", I3.3, ".dat" )' )  nTraining
+  write (filename, '( "/TrainingData/xTraining", I3.3, ".dat" )' )  nTraining
+  filename = trim(codedir) // filename
   open (unit = 7, file = filename)
     
   do i=1,nTraining
