@@ -119,8 +119,10 @@ subroutine load_GP_2CO2_Data
   end do
   close(7)
 
-  write (filename, '( "2CO2.sym" )' )
-  open (unit = 7, file = filename)
+  write (filename, '( "/2CO2.sym" )' )
+  filename = trim(codedir) // filename
+
+  open (unit = 7, file = filename,STATUS='OLD')
   read(7,*) perm
 
   !do i=1,nPerms
