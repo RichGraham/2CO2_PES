@@ -72,7 +72,7 @@ subroutine fixedAngleSlice()
   do i=0, itot
 
      ! specify centre-to-centre separation
-     r = (  1.5 + 8.5*i/(1.0*itot) ) 
+     r = (  1.5 + 20.0*i/(1.0*itot) ) 
 
      call computeDistances(r,alpha2,beta1,beta2,rab)
      

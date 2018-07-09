@@ -24,25 +24,6 @@ module GP_2CO2_variables
 end module GP_2CO2_variables
 
 
-double precision function asymp_2CO2(rab)
-  use PES_2CO2_details
-  implicit none
-  double precision rab(3)
-  double precision c1,c2,c3, cAr, o1Ar, o2Ar
-
-  c1= (  rab(1)**2 + lCO**2 - rab(2)**2)/2.0/rab(1)/lCO
-  
-  c2= (  rab(2)**2 + lCO**2 - rab(1)**2)/2.0/rab(2)/lCO
-  c3= (  rab(3)**2 + lCO**2 - rab(1)**2)/2.0/rab(3)/lCO
-
-
-  cAr  = - ( 4.64 * (1 + 3*c1**2)  +  3.30 * (5 - 3*c1**2) ) / (rab(1)*AngToBohr)**6
-  o1Ar = - ( 8.69 * (1 + 3*c2**2)  +  4.76 * (5 - 3*c2**2) ) / (rab(2)*AngToBohr)**6
-  o2Ar = - ( 8.69 * (1 + 3*c3**2)  +  4.76 * (5 - 3*c3**2) ) / (rab(3)*AngToBohr)**6
-  
-  asymp_2CO2= cAr + o1Ar + o2Ar
-end
-
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Gaussian Process Code!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!pom
 
@@ -194,7 +175,7 @@ function PES_2CO2( rab )
   
   if( rab(1) > gpRMax  .AND.  rab(2) > gpRMax .AND.  rab(3) > gpRMax &
        ) then !!Use asymptotic function
-     PES_2CO2 = 0
+     PES_2CO2 = asymp_2CO2(rab, lCO)
      
   else if (rab(1) < gpRMin/repFactor  .OR.  rab(2) < gpRMin/repFactor  .OR.  rab(3) < gpRMin/repFactor &
        ) then !! Use repulsive approximation function
@@ -209,3 +190,128 @@ function PES_2CO2( rab )
 
   
 end function PES_2CO2
+
+double precision function asymp_2CO2(rab,rco2)
+! Work out the asymptotic energy for CO2-CO2
+! rab are the interatomic distances OO, OC, OO', CO, CC, CO', O'O, O'C', O'O'
+! rco2 is the CO distances in the molecules
+! Energy is in Atomic Units (Hartree)
+! Distance is in Angstrom (Not atomic units)
+implicit none
+double precision rab(9),rco2,emult
+double precision qc,qo,qcp,qop,uc,uo,ucp,uop,tcp,top
+double precision cozz,cczz,cozx,cczx,coxz,ccxz,coxx,ccxx
+double precision oozz,oczz,oozx,oczx,ooxz,ocxz,ooxx,ocxx
+double precision asymp
+! The energy consists of nibe pair contributions, each containing
+! seven terms (six electrostatic and one dispersion).
+! The function emult is used to get the seven terms.
+! This function calls emult nine times, and adds the results.
+asymp=0d0
+! The arguments of emult are the relevant coordinates and parameters.
+! Coordinates are rab, rab', ra'b, ra'b', raa', rbb' where rab is the distance
+! between the atoms of interest, a' is bonded to a, b' is bonded to b.
+! Parameters are charge of a, dipole of a (in the direction away from
+! a'), charge of b, dipole of b (away from b'),
+! and four ab dispersion energy coefficients, ||, |-, -| and --
+! where | means parallel to the bond and - means perpendicular.
+!
+! Parameters
+qc=0.8670d0 ! charges
+qo=-0.4335d0
+uc=0d0 ! dipoles; C doesn't have one
+uo=0.1347d0 ! away from C
+cczz=2.04d0
+cozz=3.79d0 ! dispersion, z means parallel
+oczz=cozz
+oozz=7.09d0
+cczx=1.42d0
+ccxz=cczx
+cozx=2.04d0 ! x means perpendicular
+ocxz=cozx
+coxz=2.69d0
+oczx=coxz
+oozx=3.87d0
+ooxz=oozx
+ccxx=1.03d0
+coxx=1.49d0
+ocxx=coxx
+ooxx=2.16d0
+! OO (so a=O, b=O, a'=C, b'=C)
+asymp=asymp+emult(rab(1),rab(2),rab(4),rab(5),rco2,rco2,qo,uo,qo,uo,oozz,oozx,ooxz,ooxx)
+! OC (so a=O, b=C, a'=C, b'=O)
+asymp=asymp+emult(rab(2),rab(1),rab(5),rab(4),rco2,rco2,qo,uo,qc,uc,oczz,oczx,ocxz,ocxx)
+! OO' (so a=O, b=O', a'=C, b'=C)
+asymp=asymp+emult(rab(3),rab(2),rab(6),rab(5),rco2,rco2,qo,uo,qo,uo,oozz,oozx,ooxz,ooxx)
+! CO (so a=C, b=O, a'=O, b'=C)
+asymp=asymp+emult(rab(4),rab(5),rab(1),rab(2),rco2,rco2,qc,uc,qo,uo,cozz,cozx,coxz,coxx)
+! CC (so a=C, b=C, a'=O, b'=O)
+asymp=asymp+emult(rab(5),rab(4),rab(2),rab(1),rco2,rco2,qc,uc,qc,uc,cczz,cczx,ccxz,ccxx)
+! CO' (so a=C, b=O', a'=O, b'=C)
+asymp=asymp+emult(rab(6),rab(5),rab(3),rab(2),rco2,rco2,qc,uc,qo,uo,cozz,cozx,coxz,coxx)
+! O'O (so a=O', b=O, a'=C, b'=C)
+asymp=asymp+emult(rab(7),rab(8),rab(4),rab(5),rco2,rco2,qo,uo,qo,uo,oozz,oozx,ooxz,ooxx)
+! O'C (so a=O', b=C, a'=C, b'=O)
+asymp=asymp+emult(rab(8),rab(7),rab(5),rab(4),rco2,rco2,qo,uo,qc,uc,oczz,oczx,ocxz,ocxx)
+! O'O' (so a=O', b=O', a'=C, b'=C)
+asymp=asymp+emult(rab(9),rab(8),rab(6),rab(5),rco2,rco2,qo,uo,qo,uo,oozz,oozx,ooxz,ooxx)
+asymp_2CO2=asymp
+end
+!
+double precision function emult(rabang,rabpang,rapbang,rapbpang,raapang,rbbpang,qa,ua,qb,ub,d1,d2,d3,d4)
+implicit none
+double precision, parameter :: angstrom=1.88973d0
+double precision rabang,rabpang,rapbang,rapbpang,raapang,rbbpang,qa,ua,qb,ub,d1,d2,d3,d4
+double precision rab,rabp,rapb,rapbp,raap,rbbp
+double precision eadd, costa, costb, cosphi, dc1, dc2, dc3, dc4
+! Convert distances to Bohr
+rab=rabang*angstrom
+rabp=rabpang*angstrom
+rapb=rapbang*angstrom
+rapbp=rapbpang*angstrom
+raap=raapang*angstrom
+rbbp=rbbpang*angstrom
+emult=0d0
+! Calculate the multipolar energy (Coulomb+dispersion)
+!write(6,*)'emult called with distances ',rab,rabp,rapb,rapbp,raap,rbbp
+!write(6,*)'and parameters ',qa,ua,qb,ub,d1,d2,d3,d4
+! Charges
+eadd=qa*qb/rab
+!write(6,*)'Charge-charge ',eadd
+emult=emult+eadd
+! Dipole of A with charge of B, for which we need the angle ta between
+! the ap->a axis and the a->b vector
+costa=(rapb**2-raap**2-rab**2)/(2d0*raap*rab)
+!write(6,*)'cos(ta)=',costa
+eadd=ua*qb*costa/rab**2
+!write(6,*)'Dipole-charge ',eadd
+emult=emult+eadd
+! Charge of A with dipole of B, for which we need the angle tb between
+! the bp->b axis and the b->a vector
+costb=(rabp**2-rbbp**2-rab**2)/(2d0*rbbp*rab)
+!write(6,*)'cos(tb)=',costb
+eadd=qa*ub*costb/rab**2
+!write(6,*)'Charge-dipole ',eadd
+emult=emult+eadd
+! Dipole of A with dipole of B, for which we need the angle phi between
+! the ap->a axis and the bp->b axis (NB, not usual definition of phi)
+cosphi=(rabp**2+rapb**2-rab**2-rapbp**2)/(2d0*raap*rbbp)
+!write(6,*)'cos(phi)=',cosphi
+eadd=ua*ub*(cosphi+3d0*costa*costb)/rab**3
+!write(6,*)'Dipole-dipole ',eadd
+emult=emult+eadd
+!write(6,*)'Elec ',emult
+! Dispersion par-par
+dc1=d1*(cosphi+3*costa*costb)**2
+! Dispersion par-perp
+dc2=d2*((1+3*costa**2)-(cosphi+3*costa*costb)**2)
+! Dispersion perp-par
+dc3=d3*((1+3*costb**2)-(cosphi+3*costa*costb)**2)
+! Dispersion perp-perp
+dc4=d4*((4-3*costa**2-3*costb**2)+(cosphi+3*costa*costb)**2)
+!write(6,*)'DCs ',dc1,dc2,dc3,dc4
+eadd=-(dc1+dc2+dc3+dc4)/rab**6
+!write(6,*)'Dispersion ',eadd
+emult=emult+eadd
+!write(6,*)'Total ',emult
+end
