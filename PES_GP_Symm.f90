@@ -2,9 +2,7 @@
 use PES_2CO2_details
 implicit none
  
-integer k,i, choice
-
-double precision rab(9),e, PES_2CO2, xStar(9)
+double precision rab(9), PES_2CO2, xStar(9)
 
 xStar(1:9)=(/0.20971571,  0.22605512,  0.22877215,  0.20158676,  0.2298365 , &
      0.2503203 ,  0.18510657,  0.2182286 ,  0.25385964/)
@@ -37,10 +35,14 @@ end
 
 subroutine fixedAngleSlice()
   use PES_2CO2_details
+#ifdef DEBUG
+    use testing_2CO2
+#endif
+
   implicit none
   double precision rab(9)
   integer i, itot
-  double precision  r, beta1,beta2, alpha2, e, e_GP, asymp, PES_2CO2, PI
+  double precision  r, beta1,beta2, alpha2, e, PES_2CO2, PI
 
   PI=4.D0*DATAN(1.D0)
     
@@ -75,7 +77,10 @@ subroutine fixedAngleSlice()
      r = (  1.5 + 20.0*i/(1.0*itot) ) 
 
      call computeDistances(r,alpha2,beta1,beta2,rab)
-     
+
+#ifdef DEBUG
+     call testPerms( rab )
+#endif
      
      e=PES_2CO2( rab)
      !e_GP = PES_2CO2_GP( xStar)

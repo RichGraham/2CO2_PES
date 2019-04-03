@@ -24,6 +24,10 @@ module GP_2CO2_variables
 end module GP_2CO2_variables
 
 
+module perm_array_2CO2
+  integer, allocatable:: perm(:,:)
+end module perm_array_2CO2
+
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Gaussian Process Code!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!pom
 
@@ -32,13 +36,14 @@ end module GP_2CO2_variables
 subroutine load_GP_2CO2_Data
   use GP_2CO2_variables
   use PES_2CO2_details
+  use perm_array_2CO2
   implicit none
   
   double precision, allocatable::  xStar(:)
   integer i,j,k
   double precision :: dum, expVar1, expVar2,expVar3
   character (len=90) :: filename
-  integer, allocatable:: perm(:,:)
+  !integer, allocatable:: perm(:,:)
   CHARACTER(len=255) :: homedir,codedir
 
   allocate (alpha(nTraining), lScale(nDim), xTraining(nDim,nTraining),xTrainingPerm(nDim,nPerms,nTraining),  &
