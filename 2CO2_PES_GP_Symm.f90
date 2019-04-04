@@ -1,7 +1,7 @@
 !!CO2-Ar PES
 !!Distances in Angstrom and energies in Hartrees
 module PES_2CO2_details
-  double precision :: gpRMax = 9.0  
+  double precision :: gpRMax = 9.0 
   double precision :: gpRMin = 1.5  
   double precision :: lCO = 1.1632
   double precision :: AngToBohr =  1.8897259885789
@@ -173,18 +173,21 @@ function PES_2CO2( rab )
   use GP_2CO2_variables
   implicit none
   double precision rab(9), xStar(9), asymp_2CO2
-  double precision  PES_2CO2
+  double precision  PES_2CO2, sum
   double precision repFactor
+  integer i
 
   repFactor=1.0
   
-  if( rab(1) > gpRMax  .AND.  rab(2) > gpRMax .AND.  rab(3) > gpRMax &
-       ) then !!Use asymptotic function
+  if( minval(rab) > gpRMax ) then !!Use asymptotic function
      PES_2CO2 = asymp_2CO2(rab, lCO)
      
-  else if (rab(1) < gpRMin/repFactor  .OR.  rab(2) < gpRMin/repFactor  .OR.  rab(3) < gpRMin/repFactor &
-       ) then !! Use repulsive approximation function
-     PES_2CO2=gpEmax* (1.0/rab(1)**12+1.0/rab(2)**12+1.0/rab(3)**12) *gpRMin **12
+  else if (minval(rab)< gpRMin/repFactor ) then !! Use repulsive approximation function
+     sum = 0.0
+     do i=1,nDim
+        sum = sum + 1.0/rab(i)**12
+     enddo
+     PES_2CO2=gpEmax* sum *gpRMin **12/(1.0*nDim)
      
   else !! Use the Guassian Process function
      xStar(:) = 1/rab(:)

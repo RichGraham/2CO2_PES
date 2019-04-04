@@ -1,7 +1,7 @@
 module testing_2CO2
   implicit none
 
-    public :: testPerms
+    public :: testPerms,randomPointTest
   private
 
 
@@ -48,7 +48,7 @@ subroutine testPerms(rab)
         error2  =  (EPerm(1) - EPerm(perm_count))  /  EPerm(1)
      endif
 
-     !print *, EPerm(1), error2,abs(EPerm(1)-EPerm(perm_count))
+     !print *,'Perm:', perm_count,EPerm(1), error2,abs(EPerm(1)-EPerm(perm_count))
      
      if( abs(EPerm(1)-EPerm(perm_count))>toll .and. abs( error2 )>toll2) then
         print *,'****************** PERMUTATION ERROR (Perm ',perm_count,')*************************'
@@ -78,4 +78,53 @@ subroutine init_random_seed()
     DEALLOCATE(seed)
   end subroutine init_random_seed
 
+
+  subroutine randomPointTest()
+    use PES_2CO2_details
+    use GP_2CO2_variables
+    implicit none
+    double precision, allocatable:: rab(:), xStar(:)
+    double precision:: r,beta1, beta2,alpha2,start=0.1,end=30.0
+    integer :: i,j,itot=500000000, flag
+    double precision:: PI = 4*ATAN(1.d0)
+    REAL :: inTol=1e-20,  ran
+    REAL :: rNum(4)
+
+    allocate (rab(nDim), xStar(nDim) )
+    
+    !CALL init_random_seed
+
+    ran=0
+    do i=0, itot
+       flag=0
+       CALL RANDOM_NUMBER(rNum)
+       do j=1,4
+          ran= rNum(j)
+          rNum(j) = (1.0-inTol) * ran + inTol/2.0  
+       end do
+       
+       r = start + (end-start)*rNum(1)
+       beta1 = 2.0*PI *rNum(2)
+       beta2= 2.0*PI *rNum(3)
+       alpha2= 2.0*PI *rNum(4)
+
+       !print *,'Angles', r,beta1,beta2,alpha2
+       
+       call computeDistances(r,alpha2,beta1,beta2,rab)
+       !print *,'Distances',rab
+#ifdef DEBUG
+       call testPerms( rab)
+#endif
+       
+       if (MOD(i, 10000)==0) then
+          print *,i,1.0*i/(1.0*itot)*100
+       end if
+
+    enddo
+    
+  end subroutine randomPointTest
+  
+  
 end module testing_2CO2
+
+

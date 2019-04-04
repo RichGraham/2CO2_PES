@@ -1,8 +1,9 @@
 ! Test program
-use PES_2CO2_details
+  use PES_2CO2_details
+  use testing_2CO2
 implicit none
  
-double precision rab(9), PES_2CO2, xStar(9)
+double precision rab(9), PES_2CO2, xStar(9),e
 
 xStar(1:9)=(/0.20971571,  0.22605512,  0.22877215,  0.20158676,  0.2298365 , &
      0.2503203 ,  0.18510657,  0.2182286 ,  0.25385964/)
@@ -24,9 +25,12 @@ xStar(1:9)=(/0.20971571,  0.22605512,  0.22877215,  0.20158676,  0.2298365 , &
 !        0.29306223,  0.28166435,  0.27929086,  0.25204695 /)
 
 call load_GP_2CO2_Data
-call fixedAngleSlice
+e=PES_2CO2_GP( xStar)
+print *,e
+!call randomPointTest
+!call fixedAngleSlice
 
-!e=PES_2CO2_GP( xStar)
+!
 !e=PES_2CO2( rab)
 !write(6,*)e
 
@@ -128,7 +132,7 @@ subroutine computeDistances(r,alpha2,beta1, beta2, rDist)
   O4(1) =  -lCO * sin(beta2) * cos(alpha2)
   O4(2) =  -lCO * sin(beta2) * sin(alpha2)
   O4(3) =  r  -  lCO * cos(beta2)
-  
+
   
   rDist(1)= SQRT( sqLength(O1,O3) )
   rDist(2)= SQRT( sqLength(O1,C2) )
