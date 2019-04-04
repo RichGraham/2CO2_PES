@@ -11,7 +11,7 @@ MOD_OBJS=$(patsubst %.f90,%.o,$(MODS))
 # Compiler/Linker settings
 FC = gfortran
 FLFLAGS = 
-FCFLAGS =  -c -cpp -DDEBUG -Wall -DDEBUG -Wextra -Wconversion -fcheck=bounds -ffpe-trap=invalid -ffpe-trap=zero,overflow,underflow  #-fmax-errors=5
+FCFLAGS =  -c -cpp -Wall -Wextra -Wconversion -fcheck=bounds -ffpe-trap=invalid -ffpe-trap=zero,overflow,underflow  #-fmax-errors=5
 PROGRAM = 2CO2_PES.out
 PRG_OBJ = $(PROGRAM).o
 
