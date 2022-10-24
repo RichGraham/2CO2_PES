@@ -25,8 +25,9 @@ xStar(1:9)=(/0.20971571,  0.22605512,  0.22877215,  0.20158676,  0.2298365 , &
 !        0.29306223,  0.28166435,  0.27929086,  0.25204695 /)
 
 call load_GP_2CO2_Data
-e=PES_2CO2_GP( xStar)
-print *,e
+call fixedAngleSlice()
+!e=PES_2CO2_GP( xStar)
+!print *,e
 !call randomPointTest
 !call fixedAngleSlice
 
@@ -50,12 +51,12 @@ subroutine fixedAngleSlice()
 
   PI=4.D0*DATAN(1.D0)
     
-  itot=500
+  itot=200
 
   !T shape
-  !beta1 = acos(0.0)
-  !beta2 = acos(1.0)
-  !alpha2 = 0.0
+  beta1 = acos(0.0)
+  beta2 = acos(1.0)
+  alpha2 = 0.0
 
   !I shape
   !beta1 = acos(1.0)
@@ -68,9 +69,9 @@ subroutine fixedAngleSlice()
   !alpha2 = 0.0
   
   !X shape
-  beta1 = acos(0.0)
-  beta2 = acos(0.0)
-  alpha2 = 0.5 * PI
+  !beta1 = acos(0.25)
+  !beta2 = acos(0.7)
+  !alpha2 = 0.5 * PI
 
   
   open (unit=15, file="PES_2CO2_Out.dat ", status='replace')
@@ -78,7 +79,7 @@ subroutine fixedAngleSlice()
   do i=0, itot
 
      ! specify centre-to-centre separation
-     r = (  1.5 + 20.0*i/(1.0*itot) ) 
+     r = (  1.0 + 10.0*i/(1.0*itot) ) 
 
      call computeDistances(r,alpha2,beta1,beta2,rab)
 
@@ -87,6 +88,7 @@ subroutine fixedAngleSlice()
 #endif
      
      e=PES_2CO2( rab)
+     print *,rab,e
      !e_GP = PES_2CO2_GP( xStar)
      write(15,*) r , e 
      
